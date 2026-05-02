@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Alex Martin — Finance & Business</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #111111;
+    --gold: #C8A96E;
+    --gold-light: #E2C98A;
+    --cream: #F7F6F3;
+    --cream-dark: #ECEAE4;
+    --slate: #6B7280;
+    --white: #FFFFFF;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--navy); overflow-x: hidden; }
+
+  /* ── ADMIN BUTTON ── */
+  #admin-toggle {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: transparent; border: 2px solid transparent;
+    color: transparent; font-size: 1.3rem; cursor: default;
+    box-shadow: none;
+    transition: all 0.3s; display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+  }
+  #admin-toggle:hover {
+    background: var(--navy); border-color: var(--gold);
+    color: var(--gold); opacity: 1; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: scale(1.08);
+  }
+  #admin-toggle.visible {
+    background: var(--navy); border-color: var(--gold);
+    color: var(--gold); opacity: 1; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  /* ── ADMIN PANEL ── */
+  #admin-panel {
+    position: fixed; top: 0; right: -420px; width: 400px; height: 100vh;
+    background: #fff; z-index: 9998; overflow-y: auto;
+    box-shadow: -8px 0 40px rgba(0,0,0,0.18);
+    transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
+    font-family: 'DM Sans', sans-serif;
+  }
+  #admin-panel.open { right: 0; }
+  .admin-header { background: var(--navy); padding: 1.4rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1; }
+  .admin-header h2 { color: var(--gold); font-size: 0.95rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .admin-header p { color: rgba(248,245,239,0.5); font-size: 0.72rem; margin-top: 2px; }
+  #admin-close { background: none; border: none; color: rgba(248,245,239,0.6); font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0; }
+  #admin-close:hover { color: var(--gold); }
+
+  /* PASSWORD */
+  #admin-lock { padding: 2rem 1.5rem; }
+  #admin-lock h3 { font-size: 1rem; color: var(--navy); margin-bottom: 0.4rem; }
+  #admin-lock p { font-size: 0.82rem; color: var(--slate); margin-bottom: 1.2rem; line-height: 1.6; }
+  #pwd-input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; outline: none; margin-bottom: 0.8rem; letter-spacing: 0.1em; font-family: inherit; }
+  #pwd-input:focus { border-color: var(--gold); }
+  #pwd-error { color: #c0392b; font-size: 0.78rem; display: none; margin-bottom: 0.8rem; }
+  #pwd-btn { width: 100%; padding: 0.75rem; background: var(--navy); color: var(--gold); border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
+  #pwd-btn:hover { background: #1a3558; }
+  #admin-content { display: none; }
+
+  /* TABS */
+  .admin-tabs { display: flex; border-bottom: 1px solid #f0f0f0; }
+  .admin-tab { flex: 1; padding: 0.7rem 0.3rem; font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; cursor: pointer; color: var(--slate); border-bottom: 2px solid transparent; border-top: none; border-left: none; border-right: none; background: none; transition: all 0.2s; font-family: inherit; }
+  .admin-tab.active { color: var(--navy); border-bottom-color: var(--gold); }
+  .admin-section { display: none; padding: 1.2rem 1.5rem; }
+  .admin-section.active { display: block; }
+
+  /* FIELDS */
+  .field-group { margin-bottom: 1.1rem; }
+  .field-group label { display: block; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); margin-bottom: 0.35rem; }
+  .field-group input, .field-group textarea, .field-group select { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #e8e8e8; border-radius: 6px; font-size: 0.85rem; font-family: 'DM Sans', sans-serif; outline: none; color: var(--navy); transition: border-color 0.2s; background: #fafafa; }
+  .field-group input:focus, .field-group textarea:focus { border-color: var(--gold); background: #fff; }
+  .field-group textarea { resize: vertical; min-height: 75px; line-height: 1.6; }
+
+  /* SAVE */
+  .save-btn { width: 100%; padding: 0.8rem; background: var(--gold); color: var(--navy); border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.25s; margin-top: 1rem; font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+  .save-btn:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+  .save-btn:active { transform: translateY(0); }
+  .save-btn.saved { background: #27ae60 !important; color: #fff !important; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(39,174,96,0.35); }
+  .save-confirm { display: none; }
+
+  /* COLORS */
+  .color-row { display: flex; gap: 0.8rem; align-items: center; margin-bottom: 0.8rem; }
+  .color-row label { font-size: 0.78rem; color: var(--slate); flex: 1; line-height: 1.4; }
+  .color-row input[type="color"] { width: 40px; height: 32px; border: 1px solid #e8e8e8; border-radius: 4px; cursor: pointer; padding: 2px; flex-shrink: 0; }
+  .color-val { font-size: 0.7rem; color: var(--slate); font-family: monospace; width: 60px; flex-shrink: 0; }
+
+  /* STATS */
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.6rem; }
+
+  /* PROJECT ADMIN */
+  .project-card-admin { background: #f8f5ef; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #ede8de; }
+  .project-card-admin h4 { font-size: 0.75rem; font-weight: 500; color: var(--navy); margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* SKILLS */
+  .skill-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
+  .skill-row input { flex: 1; padding: 0.5rem 0.7rem; border: 1px solid #e8e8e8; border-radius: 5px; font-size: 0.82rem; font-family: inherit; outline: none; }
+  .skill-row input:focus { border-color: var(--gold); }
+  .remove-btn { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 1rem; padding: 0 0.3rem; line-height: 1; }
+  .add-btn { background: none; border: 1px dashed #c9a84c; color: var(--gold); border-radius: 4px; padding: 0.4rem 0.8rem; font-size: 0.78rem; cursor: pointer; margin-top: 0.5rem; transition: all 0.2s; font-family: inherit; }
+  .add-btn:hover { background: #fdf9f0; }
+  .theme-btn { width: 100%; text-align: left; background: #f8f5ef; border: 1px solid #ede8de; border-radius: 6px; padding: 0.6rem 0.9rem; font-size: 0.82rem; cursor: pointer; margin-bottom: 0.5rem; font-family: inherit; transition: border-color 0.2s; }
+  .theme-btn:hover { border-color: var(--gold); }
+
+  hr.sep { border: none; border-top: 1px solid #f0f0f0; margin: 1.2rem 0; }
+  .admin-sub { font-size: 0.72rem; color: var(--slate); margin-bottom: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ── SITE STYLES ── */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.4rem 5vw; background: rgba(248,245,239,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(201,168,76,0.15); }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 600; letter-spacing: 0.04em; color: var(--navy); text-decoration: none; }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a { font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); text-decoration: none; transition: color 0.25s; }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta { font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.6rem 1.4rem; background: var(--navy); color: var(--gold); border: 1px solid var(--gold); border-radius: 2px; text-decoration: none; transition: all 0.25s; }
+  .nav-cta:hover { background: var(--gold); color: var(--navy); }
+  .hero { min-height: 100vh; display: flex; align-items: center; padding: 8rem 5vw 4rem; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; right: 0; top: 0; width: 30%; height: 100%; background: var(--navy); opacity: 0.06; z-index: 0; }
+  .hero-text { position: relative; z-index: 1; }
+  .hero-eyebrow { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .hero-eyebrow::before { content: ''; display: block; width: 2.5rem; height: 1px; background: var(--gold); }
+  .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(3rem, 5.5vw, 5.5rem); font-weight: 300; line-height: 1.05; color: var(--navy); margin-bottom: 1.5rem; }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero-sub { font-size: 1rem; line-height: 1.8; color: var(--slate); max-width: 440px; margin-bottom: 2.5rem; }
+  .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-primary { padding: 0.85rem 2rem; background: var(--gold); color: var(--navy); font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 2px; text-decoration: none; transition: all 0.25s; border: 1px solid var(--gold); }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-outline { padding: 0.85rem 2rem; background: transparent; color: var(--navy); font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 2px; text-decoration: none; transition: all 0.25s; border: 1px solid var(--navy); }
+  .btn-outline:hover { background: var(--navy); color: var(--cream); }
+  .stats { background: var(--navy); padding: 3.5rem 5vw; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; border-top: 1px solid rgba(201,168,76,0.2); }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 300; color: var(--gold); line-height: 1; }
+  .stat-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(248,245,239,0.5); margin-top: 0.4rem; }
+  section { padding: 6rem 5vw; }
+  .section-label { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+  .section-label::before { content: ''; display: block; width: 2rem; height: 1px; background: var(--gold); }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 300; line-height: 1.15; color: var(--navy); margin-bottom: 3rem; }
+  .about { background: var(--white); }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+  .about-text p { font-size: 1rem; line-height: 1.9; color: var(--slate); margin-bottom: 1.2rem; }
+  .about-text p strong { color: var(--navy); font-weight: 500; }
+  .values { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 2rem; }
+  .value-item { padding: 1.2rem; border: 1px solid var(--cream-dark); border-radius: 3px; border-left: 3px solid var(--gold); }
+  .value-item h4 { font-size: 0.85rem; font-weight: 500; color: var(--navy); margin-bottom: 0.3rem; }
+  .value-item p { font-size: 0.8rem; color: var(--slate); line-height: 1.5; }
+  .quote-block { background: var(--navy); color: var(--cream); padding: 2.5rem; border-radius: 3px; border-left: 3px solid var(--gold); font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-style: italic; font-weight: 300; line-height: 1.6; }
+  .quote-block cite { display: block; margin-top: 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-style: normal; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+  .skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .skill-card { padding: 2rem; background: var(--white); border: 1px solid var(--cream-dark); border-radius: 3px; border-top: 2px solid var(--gold); transition: transform 0.25s, box-shadow 0.25s; }
+  .skill-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(11,31,58,0.08); }
+  .skill-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+  .skill-card h3 { font-size: 0.9rem; font-weight: 500; color: var(--navy); margin-bottom: 1rem; }
+  .skill-list { list-style: none; }
+  .skill-list li { font-size: 0.83rem; color: var(--slate); padding: 0.4rem 0; border-bottom: 1px solid var(--cream-dark); display: flex; align-items: center; gap: 0.5rem; }
+  .skill-list li:last-child { border-bottom: none; }
+  .skill-list li::before { content: '—'; color: var(--gold); font-size: 0.7rem; }
+  .projects { background: var(--navy); }
+  .projects .section-title { color: var(--cream); }
+  .projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .project-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2); border-radius: 3px; padding: 2rem; transition: background 0.25s, border-color 0.25s; }
+  .project-card:hover { background: rgba(201,168,76,0.06); border-color: rgba(201,168,76,0.5); }
+  .project-tag { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; }
+  .project-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; color: var(--cream); margin-bottom: 0.8rem; line-height: 1.3; }
+  .project-card p { font-size: 0.85rem; color: rgba(248,245,239,0.6); line-height: 1.7; }
+  .project-footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(201,168,76,0.15); }
+  .project-tech { font-size: 0.72rem; color: rgba(201,168,76,0.6); letter-spacing: 0.08em; }
+  .timeline { max-width: 680px; }
+  .timeline-item { display: grid; grid-template-columns: 120px 1fr; gap: 2rem; padding-bottom: 2.5rem; border-bottom: 1px solid var(--cream-dark); margin-bottom: 2.5rem; }
+  .timeline-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .timeline-date { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); font-weight: 500; padding-top: 0.2rem; }
+  .timeline-content h3 { font-size: 1rem; font-weight: 500; color: var(--navy); margin-bottom: 0.2rem; }
+  .timeline-content .school { font-size: 0.82rem; color: var(--slate); margin-bottom: 0.6rem; font-style: italic; }
+  .timeline-content p { font-size: 0.85rem; color: var(--slate); line-height: 1.7; }
+  .contact { background: var(--navy); }
+  .contact .section-title { color: var(--cream); }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; }
+  .contact-info p { font-size: 1rem; line-height: 1.9; color: rgba(248,245,239,0.65); margin-bottom: 2rem; }
+  .contact-links { display: flex; flex-direction: column; gap: 1rem; }
+  .contact-link { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; color: rgba(248,245,239,0.7); text-decoration: none; transition: color 0.2s; padding: 0.8rem 0; border-bottom: 1px solid rgba(201,168,76,0.1); }
+  .contact-link:hover { color: var(--gold); }
+  .contact-link span { color: var(--gold); font-size: 1rem; }
+  .form { display: flex; flex-direction: column; gap: 1.2rem; }
+  .form input, .form textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 2px; padding: 0.9rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--cream); outline: none; transition: border-color 0.25s; width: 100%; }
+  .form input::placeholder, .form textarea::placeholder { color: rgba(248,245,239,0.35); }
+  .form input:focus, .form textarea:focus { border-color: var(--gold); }
+  .form textarea { resize: vertical; min-height: 130px; }
+  .form button { padding: 0.9rem 2.2rem; background: var(--gold); color: var(--navy); border: none; border-radius: 2px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; align-self: flex-start; transition: background 0.25s; }
+  .form button:hover { background: var(--gold-light); }
+  footer { background: #080808; padding: 2rem 5vw; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(200,169,110,0.1); }
+  footer p { font-size: 0.78rem; color: rgba(248,245,239,0.35); letter-spacing: 0.05em; }
+  .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--gold); opacity: 0.6; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-eyebrow { animation: fadeUp 0.6s ease both; }
+  .hero h1 { animation: fadeUp 0.6s 0.15s ease both; }
+  .hero-sub { animation: fadeUp 0.6s 0.28s ease both; }
+  .hero-btns { animation: fadeUp 0.6s 0.4s ease both; }
+  .hero-visual { animation: fadeUp 0.7s 0.3s ease both; }
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; padding-top: 7rem; }
+    .hero::before { display: none; }
+    .hero-visual { display: none; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .skills-grid { grid-template-columns: 1fr 1fr; }
+    .projects-grid { grid-template-columns: 1fr; }
+    nav .nav-links, nav .nav-cta { display: none; }
+    #admin-panel { width: 100%; right: -100%; }
+  }
+</style>
+</head>
+<body>
+
+<button id="admin-toggle" title="Espace administrateur" onclick="toggleAdmin()">⚙</button>
+
+<div id="admin-panel">
+  <div class="admin-header">
+    <div><h2>⚙ Espace Admin</h2><p>Modifiez votre site sans coder</p></div>
+    <button id="admin-close" onclick="toggleAdmin()">✕</button>
+  </div>
+
+  <div id="admin-lock">
+    <h3>🔒 Accès sécurisé</h3>
+    <p style="font-size:0.82rem;color:var(--slate);margin-bottom:1.2rem;line-height:1.6;">Entrez votre mot de passe administrateur.</p>
+    <input type="password" id="pwd-input" placeholder="Mot de passe..." onkeydown="if(event.key==='Enter') checkPwd()">
+    <div id="pwd-error" style="color:#c0392b;font-size:0.78rem;display:none;margin-bottom:0.8rem;"></div>
+    <div id="pwd-locked" style="color:#c0392b;font-size:0.78rem;display:none;margin-bottom:0.8rem;background:#fdf0f0;padding:0.6rem;border-radius:6px;text-align:center;"></div>
+    <button id="pwd-btn" onclick="checkPwd()">Accéder →</button>
+    <button onclick="resetSecurity()" style="width:100%;margin-top:0.5rem;padding:0.5rem;background:transparent;border:1px solid #ddd;border-radius:6px;font-size:0.75rem;color:#999;cursor:pointer;">Réinitialiser l'accès</button>
+  </div>
+
+  <div id="admin-content">
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="showTab('profil')">👤 Profil</button>
+      <button class="admin-tab" onclick="showTab('projets')">📁 Projets</button>
+      <button class="admin-tab" onclick="showTab('skills')">💡 Skills</button>
+      <button class="admin-tab" onclick="showTab('style')">🎨 Style</button>
+    </div>
+
+    <!-- PROFIL -->
+    <div class="admin-section active" id="tab-profil">
+      <div class="field-group"><label>Prénom & Nom</label><input type="text" id="f-nom" placeholder="Ex : Marie Dupont"></div>
+      <div class="field-group"><label>Domaine / sous-titre</label><input type="text" id="f-domaine" placeholder="Ex : Étudiante · Finance & Marchés"></div>
+      <div class="field-group"><label>Phrase d'accroche (hero)</label><textarea id="f-accroche" rows="2"></textarea></div>
+      <div class="field-group"><label>Description courte</label><textarea id="f-description"></textarea></div>
+
+      <div class="field-group"><label>Email</label><input type="email" id="f-email" placeholder="votre@email.com"></div>
+      <div class="field-group"><label>LinkedIn (URL)</label><input type="text" id="f-linkedin" placeholder="linkedin.com/in/votrenom"></div>
+      <div class="field-group"><label>GitHub (URL)</label><input type="text" id="f-github" placeholder="github.com/votrenom"></div>
+      <div class="field-group"><label>Twitter / X (URL)</label><input type="text" id="f-twitter" placeholder="twitter.com/votrenom"></div>
+      <div class="field-group"><label>CV — lien PDF</label><input type="text" id="f-cv" placeholder="https://monsite.com/cv.pdf"></div>
+      <div class="field-group"><label>Téléphone</label><input type="text" id="f-tel" placeholder="+33 6 00 00 00 00"></div>
+      <div class="field-group"><label>Disponibilité</label><input type="text" id="f-dispo" placeholder="Disponible dès juin 2025"></div>
+      <hr class="sep">
+      <p class="admin-sub">Statistiques (barre foncée)</p>
+      <div class="stat-row"><input type="text" id="s1-num" placeholder="Chiffre"><input type="text" id="s1-label" placeholder="Label"></div>
+      <div class="stat-row"><input type="text" id="s2-num" placeholder="Chiffre"><input type="text" id="s2-label" placeholder="Label"></div>
+      <div class="stat-row"><input type="text" id="s3-num" placeholder="Chiffre"><input type="text" id="s3-label" placeholder="Label"></div>
+      <div class="stat-row"><input type="text" id="s4-num" placeholder="Chiffre"><input type="text" id="s4-label" placeholder="Label"></div>
+      <button class="save-btn" onclick="saveProfil()">💾 Sauvegarder le profil</button>
+      <div class="save-confirm" id="save-profil-ok">✓ Profil mis à jour !</div>
+    </div>
+
+    <!-- PROJETS -->
+    <div class="admin-section" id="tab-projets">
+      <div id="projects-admin"></div>
+      <button class="add-btn" style="width:100%;margin-bottom:0.8rem;" onclick="addProject()">+ Ajouter un projet</button>
+      <button class="save-btn" onclick="saveProjects()">💾 Sauvegarder les projets</button>
+      <div class="save-confirm" id="save-projets-ok">✓ Projets mis à jour !</div>
+    </div>
+
+    <!-- SKILLS -->
+    <div class="admin-section" id="tab-skills">
+      <div id="skills-admin"></div>
+      <button class="save-btn" onclick="saveSkills()">💾 Sauvegarder les compétences</button>
+      <div class="save-confirm" id="save-skills-ok">✓ Compétences mises à jour !</div>
+    </div>
+
+    <!-- STYLE -->
+    <div class="admin-section" id="tab-style">
+      <p style="font-size:0.8rem;color:var(--slate);margin-bottom:1rem;">Les changements de couleur s'appliquent en direct.</p>
+      <div class="color-row"><label>Couleur principale (fond)</label><input type="color" id="c-navy" value="#0B1F3A" oninput="liveColor('--navy',this.value,'cv-navy')"><span class="color-val" id="cv-navy">#0B1F3A</span></div>
+      <div class="color-row"><label>Couleur accent (or, boutons)</label><input type="color" id="c-gold" value="#C9A84C" oninput="liveColor('--gold',this.value,'cv-gold')"><span class="color-val" id="cv-gold">#C9A84C</span></div>
+      <div class="color-row"><label>Fond général</label><input type="color" id="c-cream" value="#F8F5EF" oninput="liveColor('--cream',this.value,'cv-cream')"><span class="color-val" id="cv-cream">#F8F5EF</span></div>
+      <div class="color-row"><label>Texte secondaire</label><input type="color" id="c-slate" value="#4A5568" oninput="liveColor('--slate',this.value,'cv-slate')"><span class="color-val" id="cv-slate">#4A5568</span></div>
+      <hr class="sep">
+      <p class="admin-sub">Thèmes prédéfinis</p>
+      <button class="theme-btn" onclick="applyTheme('#0B1F3A','#C9A84C','#F8F5EF','#4A5568')">🏛 Finance Gold (actuel)</button>
+      <button class="theme-btn" onclick="applyTheme('#0A2218','#00B386','#F0F7F4','#3D5A52')">📈 Finance Vert Bloomberg</button>
+      <button class="theme-btn" onclick="applyTheme('#1C2B39','#4A90D9','#F4F7FA','#4A5568')">🔷 Consulting Acier</button>
+      <button class="theme-btn" onclick="applyTheme('#1a1a2e','#E94560','#F5F5F5','#555577')">🌃 Tech Moderne</button>
+      <hr class="sep">
+      <p class="admin-sub">Changer le mot de passe</p>
+      <div class="field-group"><label>Nouveau mot de passe (min. 6 caractères)</label><input type="password" id="new-pwd" placeholder="Nouveau mot de passe..."></div>
+      <button class="save-btn" onclick="saveStyle()">💾 Sauvegarder le style</button>
+      <div class="save-confirm" id="save-style-ok">✓ Style sauvegardé !</div>
+    </div>
+  </div>
+</div>
+
+<!-- SITE -->
+<nav>
+  <a href="#" class="nav-logo" id="site-logo">A<span>.</span>Martin</a>
+  <ul class="nav-links">
+    <li><a href="#about">Profil</a></li>
+    <li><a href="#skills">Compétences</a></li>
+    <li><a href="#projects">Projets</a></li>
+    <li><a href="#education">Formation</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Me contacter</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow" id="site-domaine">Étudiant · Finance & Business</div>
+    <h1 id="site-accroche">Là où les <em>chiffres</em><br>racontent une histoire.</h1>
+    <p class="hero-sub" id="site-description">Passionné par la finance d'entreprise, l'analyse de marchés et la stratégie business. À la recherche d'une opportunité pour mettre mes compétences analytiques au service d'une équipe ambitieuse.</p>
+    <div class="hero-btns">
+      <a href="#projects" class="btn-primary">Voir mes projets</a>
+      <a href="#contact" class="btn-outline">Télécharger mon CV</a>
+    </div>
+  </div>
+
+</section>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="site-s1-num">3</div><div class="stat-label" id="site-s1-label">Stages réalisés</div></div>
+  <div class="stat"><div class="stat-num" id="site-s2-num">5+</div><div class="stat-label" id="site-s2-label">Projets académiques</div></div>
+  <div class="stat"><div class="stat-num" id="site-s3-num">2</div><div class="stat-label" id="site-s3-label">Langues maîtrisées</div></div>
+  <div class="stat"><div class="stat-num" id="site-s4-num">Top 10%</div><div class="stat-label" id="site-s4-label">Promotion</div></div>
+</div>
+
+<section class="about" id="about">
+  <div class="about-grid">
+    <div class="about-text">
+      <div class="section-label">Profil</div>
+      <h2 class="section-title">Une vision analytique<br>au service de la stratégie</h2>
+      <p>Je m'appelle <strong id="site-nom-about">Alex Martin</strong>, étudiant en Master Finance. Fasciné par les mécanismes des marchés financiers, je construis chaque jour une expertise solide à l'intersection de la finance et de la stratégie.</p>
+      <p>Mon approche est rigoureuse et orientée résultats. Que ce soit en modélisation financière ou en analyse de données, <strong>je transforme la complexité en décisions claires</strong>.</p>
+      <div class="values">
+        <div class="value-item"><h4>Rigueur</h4><p>L'exactitude des données, toujours</p></div>
+        <div class="value-item"><h4>Vision</h4><p>Penser long terme, agir maintenant</p></div>
+        <div class="value-item"><h4>Adaptabilité</h4><p>Curieux et agile face aux défis</p></div>
+        <div class="value-item"><h4>Impact</h4><p>Des analyses qui servent la décision</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="quote-block">"En finance, le vrai avantage compétitif n'est pas dans les chiffres — c'est dans la capacité à les interpréter."<cite>Ma philosophie de travail</cite></div>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="section-label">Compétences</div>
+  <h2 class="section-title">Ce que j'apporte<br>à votre équipe</h2>
+  <div class="skills-grid">
+    <div class="skill-card"><div class="skill-icon">📊</div><h3>Finance & Analyse</h3><ul class="skill-list" id="skills-col-0"><li>Modélisation financière (DCF, LBO)</li><li>Analyse de bilans</li><li>Valorisation d'entreprises</li><li>Reporting financier</li><li>Gestion des risques</li></ul></div>
+    <div class="skill-card"><div class="skill-icon">💻</div><h3>Outils & Data</h3><ul class="skill-list" id="skills-col-1"><li>Excel & VBA (avancé)</li><li>Bloomberg Terminal</li><li>Python (data)</li><li>Power BI / Tableau</li><li>SQL</li></ul></div>
+    <div class="skill-card"><div class="skill-icon">🌍</div><h3>Langues & Soft Skills</h3><ul class="skill-list" id="skills-col-2"><li>Français — natif</li><li>Anglais — courant (C1)</li><li>Communication synthétique</li><li>Travail en équipe</li><li>Présentation exécutive</li></ul></div>
+  </div>
+</section>
+
+<section class="projects" id="projects">
+  <div class="section-label">Projets</div>
+  <h2 class="section-title">Réalisations & expériences</h2>
+  <div class="projects-grid" id="site-projects-grid"></div>
+</section>
+
+<section id="education">
+  <div class="section-label">Formation</div>
+  <h2 class="section-title">Parcours académique</h2>
+  <div class="timeline">
+    <div class="timeline-item"><div class="timeline-date">2023 — 2025</div><div class="timeline-content"><h3>Master Finance d'Entreprise</h3><div class="school">Votre École — Paris</div><p>Spécialisation Finance Corporate & Marchés. Mémoire sur la valorisation des actifs immatériels.</p></div></div>
+    <div class="timeline-item"><div class="timeline-date">2020 — 2023</div><div class="timeline-content"><h3>Licence Économie & Gestion</h3><div class="school">Votre Université — Paris</div><p>Mention Très Bien. Double mineure en mathématiques appliquées et droit des affaires.</p></div></div>
+    <div class="timeline-item"><div class="timeline-date">2023</div><div class="timeline-content"><h3>CFA Level I — Candidat</h3><div class="school">CFA Institute</div><p>Score dans le top quartile mondial.</p></div></div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="section-label">Contact</div>
+  <h2 class="section-title">Travaillons ensemble</h2>
+  <div class="contact-grid">
+    <div class="contact-info">
+      <p id="site-contact-desc">Disponible pour un stage, une alternance ou un CDI. Ouvert aux opportunités en finance d'entreprise, private equity, conseil ou banque d'affaires.</p>
+      <div class="contact-links">
+        <a class="contact-link" id="site-email-link" href="#"><span>✉</span><span id="site-email-txt">alex.martin@email.com</span></a>
+        <a class="contact-link" id="site-linkedin-link" href="#" target="_blank"><span>in</span><span id="site-linkedin-txt">linkedin.com/in/alexmartin</span></a>
+        <a class="contact-link" id="site-github-link" href="#" target="_blank" style="display:none"><span>⌥</span><span id="site-github-txt"></span></a>
+        <a class="contact-link" id="site-twitter-link" href="#" target="_blank" style="display:none"><span>𝕏</span><span id="site-twitter-txt"></span></a>
+        <a id="site-cv-link" href="#" class="contact-link" target="_blank" style="display:none"><span>↓</span>Télécharger mon CV (PDF)</a>
+        <a class="contact-link" id="site-tel-link" href="#"><span>☎</span><span id="site-tel-txt">+33 6 00 00 00 00</span></a>
+      </div>
+    </div>
+    <div>
+      <form class="form" onsubmit="handleSubmit(event)">
+        <input type="text" placeholder="Votre nom" required>
+        <input type="email" placeholder="Votre email" required>
+        <input type="text" placeholder="Objet">
+        <textarea placeholder="Votre message..."></textarea>
+        <button type="submit">Envoyer le message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 <span id="footer-nom">Alex Martin</span> — Tous droits réservés</p>
+  <div class="footer-logo" id="footer-initiales">A.M</div>
+  <p>Paris, France</p>
+</footer>
+
+<script>
+const DEF = {
+  pwd:'240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', nom:'Alex Martin', domaine:'Étudiant · Finance & Business',
+  accroche:'Là où les <em>chiffres</em><br>racontent une histoire.',
+  description:"Passionné par la finance d'entreprise, l'analyse de marchés et la stratégie business. À la recherche d'une opportunité pour mettre mes compétences analytiques au service d'une équipe ambitieuse.",
+  email:'alex.martin@email.com', linkedin:'linkedin.com/in/alexmartin', github:'', twitter:'', cv:'', tel:'+33 6 00 00 00 00', dispo:'Disponible dès juin 2025',
+  stats:[['3','Stages réalisés'],['5+','Projets académiques'],['2','Langues maîtrisées'],['Top 10%','Promotion']],
+  colors:{navy:'#111111',gold:'#C8A96E',cream:'#F7F6F3',slate:'#6B7280'},
+  projects:[
+    {tag:'Analyse financière · 2024',title:"Valorisation d'une PME industrielle",desc:"Réalisation d'une valorisation complète par méthodes DCF et comparables boursiers. Recommandation d'acquisition retenue.",tech:'Excel · Bloomberg'},
+    {tag:'Stratégie · 2024',title:"Business plan d'une startup Fintech",desc:"Élaboration d'un business plan complet : étude de marché, modèle économique, projections financières sur 5 ans.",tech:'Excel · Notion'},
+    {tag:'Stage · Été 2023',title:'Analyse de portefeuille',desc:"Suivi d'un portefeuille d'actions européennes et participation aux comités d'investissement.",tech:'Bloomberg · Python'},
+    {tag:'Projet académique · 2023',title:'Impact des taux BCE sur les PME',desc:"Recherche académique sur la politique monétaire de la BCE. Analyse économétrique sur panel de 200 entreprises.",tech:'Python · R'}
+  ],
+  skills:[
+    ["Modélisation financière (DCF, LBO)","Analyse de bilans","Valorisation d'entreprises","Reporting financier","Gestion des risques"],
+    ["Excel & VBA (avancé)","Bloomberg Terminal","Python (data)","Power BI / Tableau","SQL"],
+    ["Français — natif","Anglais — courant (C1)","Communication synthétique","Travail en équipe","Présentation exécutive"]
+  ]
+};
+
+// ── OBFUSCATION XOR + BASE64 ──
+const _SK = 'px7$mK!9zQ#wLv2@'; // clé XOR
+function _xor(str, key){ return str.split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^key.charCodeAt(i%key.length))).join(''); }
+function _enc(obj){ try{ return btoa(unescape(encodeURIComponent(_xor(JSON.stringify(obj),_SK)))); }catch{ return null; } }
+function _dec(str){ try{ return JSON.parse(_xor(decodeURIComponent(escape(atob(str))),_SK)); }catch{ return null; } }
+
+function ls(k,d){ try{ const r=localStorage.getItem(k); return r ? (_dec(r) ?? d) : d; }catch{ return d; } }
+function ss(k,v){ try{ const e=_enc(v); if(e) localStorage.setItem(k,e); }catch{} }
+
+// ── SHA-256 (pur JS, fonctionne sans HTTPS) ──
+async function sha256(msg){
+  // Tenter crypto.subtle (HTTPS), sinon fallback pur JS
+  if(window.crypto && window.crypto.subtle){
+    try{
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }catch(e){}
+  }
+  // Fallback pur JS
+  return _sha256js(msg);
+}
+function _sha256js(ascii){
+  function rightRotate(value,amount){return(value>>>amount)|(value<<(32-amount));}
+  const mathPow=Math.pow;const maxWord=mathPow(2,32);const lengthProperty='length';
+  let i,j,result='';
+  const words=[];const asciiBitLength=ascii[lengthProperty]*8;
+  let hash=[];const initHash=[];const initHashSquaredPrimes=[];
+  const hash2=[];let primeCounter=0;
+  const isComposite={};
+  for(let candidate=2;primeCounter<64;candidate++){
+    if(!isComposite[candidate]){
+      for(i=0;i<313;i+=candidate)isComposite[i]=true;
+      hash[primeCounter]=mathPow(candidate,.5)*maxWord|0;
+      initHashSquaredPrimes[primeCounter++]=mathPow(candidate,1/3)*maxWord|0;
+    }
+  }
+  ascii+='\x80';
+  while(ascii[lengthProperty]%64-56)ascii+='\x00';
+  for(i=0;i<ascii[lengthProperty];i++){
+    j=ascii.charCodeAt(i);
+    if(j>>8)return '';
+    words[i>>2]|=j<<((3-i)%4*8);
+  }
+  words[words[lengthProperty]]=((asciiBitLength/maxWord)|0);
+  words[words[lengthProperty]]=asciiBitLength;
+  for(j=0;j<words[lengthProperty];){
+    const w=words.slice(j,j+=16);
+    const oldHash=hash.slice(0);
+    for(i=0;i<64;i++){
+      const w15=w[i-15],w2=w[i-2];
+      const a=hash[0],e=hash[4];
+      const temp1=hash[7]+(rightRotate(e,6)^rightRotate(e,11)^rightRotate(e,25))+(e&hash[5]^~e&hash[6])+(initHashSquaredPrimes[i])+(w[i]=i<16?w[i]:w[i-16]+(rightRotate(w15,7)^rightRotate(w15,18)^(w15>>>3))+w[i-7]+(rightRotate(w2,17)^rightRotate(w2,19)^(w2>>>10))|0);
+      const temp2=(rightRotate(a,2)^rightRotate(a,13)^rightRotate(a,22))+(a&hash[1]^a&hash[2]^hash[1]&hash[2]);
+      hash=[temp1+temp2|0].concat(hash);
+      hash[4]=hash[4]+temp1|0;
+      hash.length=8;
+    }
+    hash=hash.map((x,i)=>x+oldHash[i]|0);
+  }
+  for(i=0;i<8;i++)for(j=3;j+1;j--){const b=hash[i]>>(j*8)&255;result+=((b<16)?'0':'')+b.toString(16);}
+  return result;
+}
+
+// ── SÉCURITÉ : tentatives + session ──
+const MAX_ATTEMPTS = 3;
+const LOCK_MS = 5 * 60 * 1000;      // 5 min blocage
+const SESSION_MS = 30 * 60 * 1000;  // 30 min session
+
+function getSecState(){ return ls('_sec', {attempts:0, lockedUntil:0}); }
+function setSecState(s){ ss('_sec', s); }
+
+let sessionTimer = null;
+function resetSessionTimer(){
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(()=>{
+    unlocked = false;
+    document.getElementById('admin-lock').style.display='block';
+    document.getElementById('admin-content').style.display='none';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-error').style.display='none';
+    showLockMsg('⏱ Session expirée. Reconnectez-vous.', '#856404');
+  }, SESSION_MS);
+}
+function showLockMsg(msg, color='#c0392b'){
+  const el = document.getElementById('pwd-locked');
+  el.textContent = msg; el.style.display='block'; el.style.color=color;
+}
+
+// Charger les données et migrer si nécessaire
+// Nettoyer le localStorage si les données sont corrompues (ancien format non obfusqué)
+(function migrateData(){
+  try {
+    const raw = localStorage.getItem('site_data');
+    if(raw){
+      // Si ça commence par '{' c'est l'ancien format en clair → on efface
+      const decoded = atob(raw);
+      if(decoded.startsWith('{')) { localStorage.removeItem('site_data'); }
+    }
+  } catch(e) { /* déjà obfusqué ou absent, ok */ }
+  try {
+    const rawSec = localStorage.getItem('_sec');
+    if(rawSec && rawSec.startsWith('{')) { localStorage.removeItem('_sec'); }
+  } catch(e) {}
+})();
+
+let D = ls('site_data', DEF);
+// Migration des champs manquants
+if(!D.nom) D = {...DEF, ...D};
+D.github = D.github ?? '';
+D.twitter = D.twitter ?? '';
+D.cv = D.cv ?? '';
+// Si le pwd stocké n'est pas un hash SHA-256 valide (64 hex), on remet le défaut
+if(!D.pwd || !/^[0-9a-f]{64}$/.test(D.pwd)) D.pwd = DEF.pwd;
+delete D.photo;
+
+function getInitials(nom){ return nom.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+function renderSite(){
+  const ini = getInitials(D.nom);
+  document.getElementById('page-title').textContent = D.nom+' — Finance & Business';
+  document.getElementById('site-logo').innerHTML = ini[0]+'<span>.</span>'+(ini[1]||'');
+  document.getElementById('site-domaine').textContent = D.domaine;
+  document.getElementById('site-accroche').innerHTML = D.accroche;
+  document.getElementById('site-description').textContent = D.description;
+  document.getElementById('site-nom-about').textContent = D.nom;
+  document.getElementById('footer-nom').textContent = D.nom;
+  document.getElementById('footer-initiales').textContent = ini[0]+'.'+(ini[1]||'');
+  document.getElementById('site-email-txt').textContent = D.email;
+  document.getElementById('site-email-link').href = 'mailto:'+D.email;
+  document.getElementById('site-linkedin-txt').textContent = D.linkedin;
+  document.getElementById('site-linkedin-link').href = 'https://'+D.linkedin.replace(/^https?:\/\//,'');
+  document.getElementById('site-tel-txt').textContent = D.tel;
+  document.getElementById('site-tel-link').href = 'tel:'+D.tel.replace(/\s/g,'');
+  // CV link
+  const cvLink = document.getElementById('site-cv-link');
+  if(cvLink){ cvLink.href = D.cv||'#'; cvLink.style.display = D.cv ? 'flex' : 'none'; }
+  // GitHub
+  const ghLink = document.getElementById('site-github-link');
+  if(ghLink){ if(D.github){ ghLink.href='https://'+D.github.replace(/^https?:\/\//,''); ghLink.style.display='flex'; document.getElementById('site-github-txt').textContent=D.github; } else { ghLink.style.display='none'; } }
+  // Twitter
+  const twLink = document.getElementById('site-twitter-link');
+  if(twLink){ if(D.twitter){ twLink.href='https://'+D.twitter.replace(/^https?:\/\//,''); twLink.style.display='flex'; document.getElementById('site-twitter-txt').textContent=D.twitter; } else { twLink.style.display='none'; } }
+  D.stats.forEach((s,i)=>{ document.getElementById('site-s'+(i+1)+'-num').textContent=s[0]; document.getElementById('site-s'+(i+1)+'-label').textContent=s[1]; });
+  const root = document.documentElement.style;
+  root.setProperty('--navy',D.colors.navy); root.setProperty('--gold',D.colors.gold);
+  root.setProperty('--cream',D.colors.cream); root.setProperty('--slate',D.colors.slate);
+  document.getElementById('site-projects-grid').innerHTML = D.projects.map(p=>`<div class="project-card"><div class="project-tag">${p.tag}</div><h3>${p.title}</h3><p>${p.desc}</p><div class="project-footer"><span class="project-tech">${p.tech}</span></div></div>`).join('');
+  D.skills.forEach((col,i)=>{ const ul=document.getElementById('skills-col-'+i); if(ul) ul.innerHTML=col.map(s=>`<li>${s}</li>`).join(''); });
+}
+
+let adminOpen=false, unlocked=false;
+function toggleAdmin(){
+  adminOpen=!adminOpen;
+  document.getElementById('admin-panel').classList.toggle('open',adminOpen);
+  if(adminOpen && unlocked){ fillFields(); resetSessionTimer(); }
+  if(adminOpen && !unlocked){ checkLockStatus(); }
+}
+
+function checkLockStatus(){
+  const sec = getSecState();
+  if(sec.lockedUntil > Date.now()){
+    const remaining = Math.ceil((sec.lockedUntil - Date.now()) / 60000);
+    document.getElementById('pwd-btn').disabled = true;
+    document.getElementById('pwd-input').disabled = true;
+    showLockMsg(`🔐 Accès bloqué. Réessayez dans ${remaining} min.`);
+  } else {
+    document.getElementById('pwd-btn').disabled = false;
+    document.getElementById('pwd-input').disabled = false;
+    document.getElementById('pwd-locked').style.display='none';
+  }
+}
+
+function resetSecurity(){
+  localStorage.removeItem('_sec');
+  document.getElementById('pwd-btn').disabled = false;
+  document.getElementById('pwd-input').disabled = false;
+  document.getElementById('pwd-locked').style.display='none';
+  document.getElementById('pwd-error').style.display='none';
+  document.getElementById('pwd-input').value='';
+  document.getElementById('pwd-input').focus();
+}
+
+async function checkPwd(){
+  const sec = getSecState();
+  if(sec.lockedUntil > Date.now()){
+    checkLockStatus(); return;
+  }
+  const v = document.getElementById('pwd-input').value;
+  if(!v) return;
+  const hash = await sha256(v);
+  if(hash === D.pwd){
+    sec.attempts = 0; sec.lockedUntil = 0; setSecState(sec);
+    unlocked = true;
+    document.getElementById('admin-lock').style.display='none';
+    document.getElementById('admin-content').style.display='block';
+    document.getElementById('pwd-error').style.display='none';
+    document.getElementById('pwd-locked').style.display='none';
+    fillFields(); buildProjects(); buildSkills();
+    resetSessionTimer();
+  } else {
+    sec.attempts = (sec.attempts||0) + 1;
+    if(sec.attempts >= MAX_ATTEMPTS){
+      sec.lockedUntil = Date.now() + LOCK_MS;
+      setSecState(sec);
+      document.getElementById('pwd-btn').disabled = true;
+      document.getElementById('pwd-input').disabled = true;
+      document.getElementById('pwd-error').style.display='none';
+      showLockMsg('🔐 3 tentatives échouées. Accès bloqué 5 minutes.');
+    } else {
+      setSecState(sec);
+      const restants = MAX_ATTEMPTS - sec.attempts;
+      const errEl = document.getElementById('pwd-error');
+      errEl.textContent = `❌ Mot de passe incorrect. ${restants} tentative${restants>1?'s':''} restante${restants>1?'s':''}.`;
+      errEl.style.display='block';
+    }
+    document.getElementById('pwd-input').value='';
+  }
+}
+function showTab(n){ document.querySelectorAll('.admin-tab').forEach((t,i)=>t.classList.toggle('active',['profil','projets','skills','style'][i]===n)); document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active')); document.getElementById('tab-'+n).classList.add('active'); }
+
+function fillFields(){
+  document.getElementById('f-nom').value=D.nom;
+  document.getElementById('f-domaine').value=D.domaine;
+  document.getElementById('f-accroche').value=D.accroche.replace(/<[^>]+>/g,'');
+  document.getElementById('f-description').value=D.description;
+  document.getElementById('f-email').value=D.email;
+  document.getElementById('f-linkedin').value=D.linkedin;
+  document.getElementById('f-github').value=D.github||'';
+  document.getElementById('f-twitter').value=D.twitter||'';
+  document.getElementById('f-cv').value=D.cv||'';
+  document.getElementById('f-tel').value=D.tel;
+  document.getElementById('f-dispo').value=D.dispo||'';
+  D.stats.forEach((s,i)=>{ document.getElementById('s'+(i+1)+'-num').value=s[0]; document.getElementById('s'+(i+1)+'-label').value=s[1]; });
+  ['navy','gold','cream','slate'].forEach(k=>{ document.getElementById('c-'+k).value=D.colors[k]; document.getElementById('cv-'+k).textContent=D.colors[k]; });
+}
+
+function saveProfil(){
+  D.nom=document.getElementById('f-nom').value||D.nom;
+  D.domaine=document.getElementById('f-domaine').value||D.domaine;
+  D.accroche=document.getElementById('f-accroche').value||D.accroche;
+  D.description=document.getElementById('f-description').value||D.description;
+  D.email=document.getElementById('f-email').value||D.email;
+  D.linkedin=document.getElementById('f-linkedin').value||D.linkedin;
+  D.github=document.getElementById('f-github').value;
+  D.twitter=document.getElementById('f-twitter').value;
+  D.cv=document.getElementById('f-cv').value;
+  D.tel=document.getElementById('f-tel').value||D.tel;
+  D.dispo=document.getElementById('f-dispo').value;
+  D.stats=[1,2,3,4].map(i=>[document.getElementById('s'+i+'-num').value||D.stats[i-1][0], document.getElementById('s'+i+'-label').value||D.stats[i-1][1]]);
+  ss('site_data',D); renderSite(); resetSessionTimer(); flash('save-profil-ok');
+}
+
+function buildProjects(){
+  document.getElementById('projects-admin').innerHTML=D.projects.map((p,i)=>`<div class="project-card-admin"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;"><h4 style="margin:0">Projet ${i+1}</h4><button class="remove-btn" style="font-size:0.78rem;padding:0.2rem 0.5rem;border:1px solid #e0c0c0;border-radius:4px;" onclick="rmProject(${i})">✕ Supprimer</button></div><div class="field-group"><label>Tag / Catégorie</label><input type="text" id="p${i}-tag" value="${p.tag}"></div><div class="field-group"><label>Titre</label><input type="text" id="p${i}-title" value="${p.title}"></div><div class="field-group"><label>Description</label><textarea id="p${i}-desc">${p.desc}</textarea></div><div class="field-group"><label>Technologies</label><input type="text" id="p${i}-tech" value="${p.tech}"></div></div>`).join('');
+}
+function addProject(){ D.projects.push({tag:'Nouveau · '+new Date().getFullYear(),title:'Nouveau projet',desc:'Description du projet.',tech:''}); buildProjects(); }
+function rmProject(i){ if(D.projects.length<=1) return; D.projects.splice(i,1); buildProjects(); }
+function saveProjects(){ D.projects=D.projects.map((p,i)=>({tag:document.getElementById('p'+i+'-tag').value||p.tag,title:document.getElementById('p'+i+'-title').value||p.title,desc:document.getElementById('p'+i+'-desc').value||p.desc,tech:document.getElementById('p'+i+'-tech').value||p.tech})); ss('site_data',D); renderSite(); resetSessionTimer(); flash('save-projets-ok'); }
+
+const skillTitles=['Finance & Analyse','Outils & Data','Langues & Soft Skills'];
+function buildSkills(){
+  document.getElementById('skills-admin').innerHTML=D.skills.map((col,ci)=>`<div class="project-card-admin"><h4>${skillTitles[ci]}</h4><div id="sc-${ci}">${col.map((s,si)=>`<div class="skill-row"><input type="text" value="${s}" oninput="D.skills[${ci}][${si}]=this.value"><button class="remove-btn" onclick="rmSkill(${ci},${si})">✕</button></div>`).join('')}</div><button class="add-btn" onclick="addSkill(${ci})">+ Ajouter</button></div>`).join('');
+}
+function addSkill(ci){ D.skills[ci].push('Nouvelle compétence'); buildSkills(); }
+function rmSkill(ci,si){ D.skills[ci].splice(si,1); buildSkills(); }
+function saveSkills(){ ss('site_data',D); renderSite(); resetSessionTimer(); flash('save-skills-ok'); }
+
+function liveColor(v,val,id){ document.documentElement.style.setProperty(v,val); document.getElementById(id).textContent=val; D.colors[v.replace('--','')]=val; }
+function applyTheme(navy,gold,cream,slate){ [['navy',navy],['gold',gold],['cream',cream],['slate',slate]].forEach(([k,v])=>{ document.getElementById('c-'+k).value=v; liveColor('--'+k,v,'cv-'+k); }); }
+async function saveStyle(){
+  const p = document.getElementById('new-pwd').value;
+  if(p && p.length >= 6){
+    D.pwd = await sha256(p);
+    document.getElementById('new-pwd').value='';
+  }
+  ss('site_data',D);
+  resetSessionTimer();
+  flash('save-style-ok');
+}
+
+function flash(id){
+  // Trouver le bouton save juste avant le div de confirmation
+  const confirm = document.getElementById(id);
+  const btn = confirm ? confirm.previousElementSibling : null;
+  if(btn && btn.classList.contains('save-btn')){
+    const original = btn.textContent;
+    btn.textContent = '✓ Sauvegardé !';
+    btn.classList.add('saved');
+    btn.disabled = true;
+    setTimeout(()=>{
+      btn.textContent = original;
+      btn.classList.remove('saved');
+      btn.disabled = false;
+    }, 2500);
+  }
+}
+
+function handleSubmit(e){ e.preventDefault(); const b=e.target.querySelector('button'); b.textContent='Envoyé ✓'; b.style.background='#27ae60'; b.style.color='#fff'; setTimeout(()=>{ b.textContent='Envoyer le message'; b.style.background=''; b.style.color=''; e.target.reset(); },3000); }
+
+// SCROLL REVEAL
+const ro=new IntersectionObserver(entries=>{ entries.forEach((e,i)=>{ if(e.isIntersecting){ e.target.style.animation=`fadeUp 0.6s ${i*0.08}s cubic-bezier(0.22,1,0.36,1) both`; ro.unobserve(e.target); } }); },{threshold:0.1});
+document.querySelectorAll('.skill-card,.timeline-item,.value-item,.project-card').forEach(el=>{ el.style.opacity='0'; ro.observe(el); });
+
+// COMPTEUR ANIMÉ
+function animateCounter(el, target) {
+  const num = parseFloat(target.replace(/[^0-9.]/g,'')) || 0;
+  if(!num){ el.textContent=target; return; }
+  const suffix = target.replace(/[0-9.]/g,'');
+  let start=0; const duration=1800; const startTime=performance.now();
+  function update(now) {
+    const progress = Math.min((now-startTime)/duration,1);
+    const ease = 1-Math.pow(1-progress,3);
+    el.textContent = Math.floor(ease*num)+suffix;
+    if(progress<1) requestAnimationFrame(update);
+    else el.textContent=target;
+  }
+  requestAnimationFrame(update);
+}
+const statsObs=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ statsObs.unobserve(e.target); e.target.querySelectorAll('.stat-num').forEach(el=>animateCounter(el,el.textContent.trim())); } }); },{threshold:0.5});
+const statsBlock=document.querySelector('.stats'); if(statsBlock) statsObs.observe(statsBlock);
+
+// EFFET FRAPPE HERO
+function typewriter(el, html, speed=40) {
+  const plain = html.replace(/<[^>]+>/g,'');
+  const em = html.match(/<em>(.*?)<\/em>/)?.[1]||'';
+  const emIdx = em ? plain.indexOf(em) : -1;
+  let i=0; el.innerHTML='';
+  function render(chunk) {
+    if(!em||emIdx<0){ el.textContent=chunk; return; }
+    if(i<=emIdx) el.innerHTML=chunk;
+    else if(i<=emIdx+em.length) el.innerHTML=plain.slice(0,emIdx)+'<em>'+plain.slice(emIdx,i)+'</em>';
+    else el.innerHTML=plain.slice(0,emIdx)+'<em>'+em+'</em>'+plain.slice(emIdx+em.length,i);
+  }
+  function type(){ if(i<=plain.length){ render(plain.slice(0,i)); i++; setTimeout(type,i===1?700:speed); } }
+  setTimeout(type,900);
+}
+
+// BARRE DE PROGRESSION SCROLL
+const bar=document.createElement('div');
+bar.style.cssText='position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:99999;width:0%;transition:width 0.1s linear;';
+document.body.appendChild(bar);
+window.addEventListener('scroll',()=>{ const p=(window.scrollY/(document.body.scrollHeight-window.innerHeight))*100; bar.style.width=p+'%'; });
+
+// TRIPLE-CLIC pour révéler le bouton admin
+let clickCount=0, clickTimer=null;
+document.addEventListener('click', function(e){
+  if(e.target.closest('#admin-toggle')||e.target.closest('#admin-panel')) return;
+  clickCount++;
+  if(clickTimer) clearTimeout(clickTimer);
+  if(clickCount>=3){
+    clickCount=0;
+    const btn=document.getElementById('admin-toggle');
+    btn.classList.add('visible');
+    btn.style.cursor='pointer';
+    setTimeout(()=>{ if(!adminOpen){ btn.classList.remove('visible'); btn.style.cursor='default'; } },4000);
+  } else {
+    clickTimer=setTimeout(()=>{ clickCount=0; },500);
+  }
+});
+
+renderSite();
+setTimeout(()=>{ const el=document.getElementById('site-accroche'); if(el) typewriter(el,el.innerHTML); },500);
+</script>
+</body>
+</html>
